@@ -70,6 +70,25 @@ dotnet run --project src/SpillSense.Web
 
 The web host applies migrations on startup and exposes `/healthz`.
 
+### Loading data
+
+The intake pipeline imports incident CSVs with full validation:
+
+```bash
+dotnet run --project src/SpillSense.Web -- import "$(pwd)/data/sample/spill_incidents_2020_2026.csv"
+```
+
+Every run is recorded as an auditable `ImportRun` with insert/update/unchanged/rejected counts. Imports are **idempotent** — re-running a file inserts nothing new, and changed rows update in place (matched on report number). Rows that fail validation are **quarantined** with the raw row preserved verbatim plus every failure reason, so nothing is silently dropped:
+
+```bash
+dotnet run --project src/SpillSense.Web -- import "$(pwd)/data/sample/quarantine_demo.csv"
+# CompletedWithRejects: 10 rows - 3 inserted, 0 updated, 0 unchanged, 7 quarantined.
+```
+
+Validation catches malformed report numbers, unparseable or future dates, swapped/out-of-state coordinates, unknown counties, negative quantities, unrecognized classifications, and in-file duplicates — and reports *every* problem on a row at once. Free-text substance names are auto-classified into reporting categories (diesel, crude, heavy fuel oil, chemical, …).
+
+> Sample data is synthetic (see `tools/generate-sample-data.mjs`) — realistic in shape and geography, but not real ERTS records.
+
 ## Roadmap
 
 Built milestone by milestone via pull requests:
@@ -77,7 +96,7 @@ Built milestone by milestone via pull requests:
 | Milestone | Scope | Status |
 |---|---|---|
 | M1 | Solution scaffold, domain model, EF Core persistence, CI | ✅ |
-| M2 | ETL intake pipeline: validation, quarantine, idempotent upserts | ⏳ |
+| M2 | ETL intake pipeline: validation, quarantine, idempotent upserts | ✅ |
 | M3 | REST API: filtering, paging, stats, GeoJSON | ⏳ |
 | M4 | GIS dashboard: Leaflet map, charts, incident explorer | ⏳ |
 | M5 | Reporting: rollups, CSV export, documentation | ⏳ |

@@ -1,5 +1,7 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using SpillSense.Domain.Intake;
 using SpillSense.Infrastructure;
+using SpillSense.Infrastructure.Etl;
 using SpillSense.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +18,30 @@ using (var scope = app.Services.CreateScope())
     await db.Database.MigrateAsync();
 }
 
+// CLI mode: `dotnet run -- import <file.csv>` runs the intake pipeline
+// against the configured database and exits without starting the server.
+if (args is ["import", var csvPath])
+{
+    // Note: `dotnet run` sets the working directory to the project folder,
+    // so relative paths resolve from there; pass an absolute path otherwise.
+    if (!File.Exists(csvPath))
+    {
+        Console.Error.WriteLine($"File not found: {Path.GetFullPath(csvPath)}");
+        return 1;
+    }
+
+    using var scope = app.Services.CreateScope();
+    var importer = scope.ServiceProvider.GetRequiredService<IncidentImportService>();
+
+    using var reader = new StreamReader(csvPath);
+    var run = await importer.ImportAsync(Path.GetFileName(csvPath), reader);
+
+    Console.WriteLine(
+        $"{run.Status}: {run.TotalRows} rows - {run.InsertedCount} inserted, " +
+        $"{run.UpdatedCount} updated, {run.UnchangedCount} unchanged, {run.RejectedCount} quarantined.");
+    return run.Status == ImportRunStatus.Failed ? 1 : 0;
+}
+
 app.MapGet("/healthz", async (SpillSenseDbContext db) =>
 {
     var canConnect = await db.Database.CanConnectAsync();
@@ -25,6 +51,7 @@ app.MapGet("/healthz", async (SpillSenseDbContext db) =>
 });
 
 app.Run();
+return 0;
 
 // Exposed for WebApplicationFactory-based integration tests.
 public partial class Program;
