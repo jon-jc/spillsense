@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SpillSense.Domain/SpillSense.Domain.csproj" />
+    <Project Path="src/SpillSense.Infrastructure/SpillSense.Infrastructure.csproj" />
+    <Project Path="src/SpillSense.Web/SpillSense.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SpillSense.Tests/SpillSense.Tests.csproj" />
+  </Folder>
+</Solution>

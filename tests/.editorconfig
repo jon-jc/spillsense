@@ -1,0 +1,5 @@
+# Test-project relaxations: xUnit convention uses underscore-separated test
+# names, and test methods intentionally use literal arrays in Theory data.
+[*.cs]
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1861.severity = none
