@@ -1,12 +1,26 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 using SpillSense.Domain.Intake;
 using SpillSense.Infrastructure;
 using SpillSense.Infrastructure.Etl;
 using SpillSense.Infrastructure.Persistence;
+using SpillSense.Web.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSpillSenseInfrastructure(builder.Configuration);
+builder.Services.AddProblemDetails();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, _, _) =>
+    {
+        document.Info.Title = "SpillSense API";
+        document.Info.Description =
+            "Spill incident data management & analytics: filterable incident queries, " +
+            "GeoJSON for mapping, statistical rollups, and import-run auditing.";
+        return Task.CompletedTask;
+    });
+});
 
 var app = builder.Build();
 
@@ -48,7 +62,14 @@ app.MapGet("/healthz", async (SpillSenseDbContext db) =>
     return canConnect
         ? Results.Ok(new { status = "healthy", database = "connected" })
         : Results.Problem("Database unreachable", statusCode: StatusCodes.Status503ServiceUnavailable);
-});
+}).WithTags("Health");
+
+app.MapIncidentEndpoints();
+app.MapStatsEndpoints();
+app.MapImportEndpoints();
+
+app.MapOpenApi();
+app.MapScalarApiReference("/docs", options => options.WithTitle("SpillSense API"));
 
 app.Run();
 return 0;

@@ -89,6 +89,23 @@ Validation catches malformed report numbers, unparseable or future dates, swappe
 
 > Sample data is synthetic (see `tools/generate-sample-data.mjs`) — realistic in shape and geography, but not real ERTS records.
 
+### The API
+
+Interactive API reference lives at **`/docs`** (OpenAPI document at `/openapi/v1.json`).
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/incidents` | Filterable, paged list — county, Ecology region, medium, substance category, source, status, date range, text search, `minGallons`, `bbox` spatial filter |
+| `GET /api/incidents/{reportNumber}` | Full incident detail |
+| `GET /api/incidents/geojson` | Same filters, returned as an RFC 7946 FeatureCollection for mapping |
+| `GET /api/stats/summary` | Counts + volumes rolled up by medium, category, source, status |
+| `GET /api/stats/trend` | Monthly incident counts and spilled volume |
+| `GET /api/stats/counties` | Per-county rollup with FIPS codes |
+| `GET /api/imports` | Import-run audit trail |
+| `GET /api/imports/{id}/quarantine` | Quarantined rows with failure reasons |
+
+All filters combine with AND and are shared across list, GeoJSON, and stats endpoints. Bad input returns RFC 9457 problem details naming every invalid parameter — e.g. `?medium=Lava` lists the accepted values.
+
 ## Roadmap
 
 Built milestone by milestone via pull requests:
@@ -97,7 +114,7 @@ Built milestone by milestone via pull requests:
 |---|---|---|
 | M1 | Solution scaffold, domain model, EF Core persistence, CI | ✅ |
 | M2 | ETL intake pipeline: validation, quarantine, idempotent upserts | ✅ |
-| M3 | REST API: filtering, paging, stats, GeoJSON | ⏳ |
+| M3 | REST API: filtering, paging, stats, GeoJSON | ✅ |
 | M4 | GIS dashboard: Leaflet map, charts, incident explorer | ⏳ |
 | M5 | Reporting: rollups, CSV export, documentation | ⏳ |
 
