@@ -1,0 +1,31 @@
+# Build output
+bin/
+obj/
+artifacts/
+publish/
+
+# User/IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Local tooling
+.claude/
+CLAUDE.md
+
+# Local databases & logs
+*.db
+*.db-shm
+*.db-wal
+logs/
+
+# Test results
+TestResults/
+coverage/
+*.trx
+
+# OS
+Thumbs.db
+.DS_Store
