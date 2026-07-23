@@ -1,8 +1,11 @@
 using System.Net;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using SpillSense.Infrastructure.Persistence;
 
 namespace SpillSense.Tests.Web;
 
@@ -16,11 +19,11 @@ public sealed class HealthEndpointTests : IDisposable
         _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment(Environments.Development);
-            builder.ConfigureAppConfiguration((_, config) =>
-                config.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["ConnectionStrings:SpillSense"] = $"Data Source={_dbPath}",
-                }));
+            builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<DbContextOptions<SpillSenseDbContext>>();
+                services.AddDbContext<SpillSenseDbContext>(o => o.UseSqlite($"Data Source={_dbPath}"));
+            });
         });
     }
 
@@ -39,6 +42,7 @@ public sealed class HealthEndpointTests : IDisposable
     public void Dispose()
     {
         _factory.Dispose();
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         if (File.Exists(_dbPath))
         {
             File.Delete(_dbPath);
