@@ -1,10 +1,86 @@
 # SpillSense
 
-**Spill incident data management & analytics platform** — built with ASP.NET Core, Entity Framework Core, and Leaflet.
+[![CI](https://github.com/jon-jc/spillsense/actions/workflows/ci.yml/badge.svg)](https://github.com/jon-jc/spillsense/actions/workflows/ci.yml)
+![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-SpillSense tracks oil and hazardous-material spill incidents across Washington State: structured incident data with spatial coordinates, a validated ETL intake pipeline, a filterable REST API, an interactive GIS dashboard, and reporting/export tooling for program analysts.
+**Spill incident data management & analytics platform** — ASP.NET Core, Entity Framework Core, and Leaflet.
 
-> Project scaffolding in progress — see pull requests for milestone-by-milestone build-out.
+SpillSense models the data systems that support oil-spill prevention, preparedness, and response programs: structured incident records with spatial coordinates, a validated ETL intake pipeline, a filterable REST API, an interactive GIS dashboard, and reporting/export tooling for program analysts.
+
+## Why this exists
+
+Spill response programs live and die by data quality: a responder needs to know *what* spilled, *where*, *how much*, and *who is responsible* — fast. SpillSense demonstrates a full vertical slice of that problem:
+
+- **Domain-driven data model** for spill incidents, aligned with how environmental agencies actually classify spills (medium affected, substance category, source type, response status, Ecology regional jurisdiction).
+- **Reference geography** — all 39 Washington counties seeded with FIPS codes, Department of Ecology region assignments, and coastal flags, plus coordinate sanity bounds that catch swapped or malformed lat/lons at intake.
+- **Database-enforced integrity** — unique natural keys for idempotent imports, restricted deletes on reference data, string-stored enums so the database stays self-describing for report writers, and indexes matched to dashboard query paths.
+
+## Architecture
+
+```
+src/
+  SpillSense.Domain/          Entities, enums, and geography rules. No dependencies.
+  SpillSense.Infrastructure/  EF Core DbContext, configurations, migrations, seed data.
+  SpillSense.Web/             ASP.NET Core host: API endpoints + dashboard (coming).
+tests/
+  SpillSense.Tests/           Unit + integration tests (in-memory SQLite runs real migrations).
+```
+
+The default database provider is SQLite so the project runs anywhere with zero setup. The EF model is kept provider-portable — pointing the connection string at SQL Server is a drop-in swap, which mirrors a common agency deployment target.
+
+### Data model
+
+```mermaid
+erDiagram
+    SpillIncident }o--|| County : "occurred in"
+    SpillIncident {
+        int Id PK
+        string ReportNumber UK "ERTS-style natural key"
+        datetime ReportedAtUtc
+        datetime OccurredAtUtc
+        double Latitude "WGS 84"
+        double Longitude "WGS 84"
+        string SubstanceName
+        string SubstanceCategory
+        string Medium
+        string SourceType
+        string Status
+        decimal QuantityGallons
+        decimal RecoveredGallons
+        string ResponsibleParty
+    }
+    County {
+        int Id PK
+        string Name UK
+        string FipsCode UK
+        string Region "Ecology regional office"
+        bool IsCoastal
+    }
+```
+
+## Getting started
+
+Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
+
+```bash
+dotnet test          # run the full suite
+dotnet run --project src/SpillSense.Web
+```
+
+The web host applies migrations on startup and exposes `/healthz`.
+
+## Roadmap
+
+Built milestone by milestone via pull requests:
+
+| Milestone | Scope | Status |
+|---|---|---|
+| M1 | Solution scaffold, domain model, EF Core persistence, CI | ✅ |
+| M2 | ETL intake pipeline: validation, quarantine, idempotent upserts | ⏳ |
+| M3 | REST API: filtering, paging, stats, GeoJSON | ⏳ |
+| M4 | GIS dashboard: Leaflet map, charts, incident explorer | ⏳ |
+| M5 | Reporting: rollups, CSV export, documentation | ⏳ |
 
 ## License
 

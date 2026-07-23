@@ -1,0 +1,3 @@
+# EF Core scaffolds these files; exempt them from style analyzers.
+[*.cs]
+generated_code = true
