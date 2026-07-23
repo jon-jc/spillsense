@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SpillSense.Infrastructure.Etl;
 using SpillSense.Infrastructure.Persistence;
 
 namespace SpillSense.Infrastructure;
@@ -20,6 +21,8 @@ public static class DependencyInjection
 
         services.AddDbContext<SpillSenseDbContext>(options =>
             options.UseSqlite(connectionString));
+
+        services.AddScoped<IncidentImportService>();
 
         return services;
     }

@@ -1,5 +1,6 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SpillSense.Domain.Geography;
+using SpillSense.Domain.Intake;
 using SpillSense.Domain.Incidents;
 
 namespace SpillSense.Infrastructure.Persistence;
@@ -13,6 +14,8 @@ public class SpillSenseDbContext : DbContext
 
     public DbSet<SpillIncident> Incidents => Set<SpillIncident>();
     public DbSet<County> Counties => Set<County>();
+    public DbSet<ImportRun> ImportRuns => Set<ImportRun>();
+    public DbSet<QuarantinedRecord> QuarantinedRecords => Set<QuarantinedRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
