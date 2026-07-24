@@ -71,6 +71,8 @@ app.MapIncidentEndpoints();
 app.MapStatsEndpoints();
 app.MapImportEndpoints();
 app.MapCountyEndpoints();
+app.MapExportEndpoints();
+app.MapReportEndpoints();
 
 app.MapOpenApi();
 app.MapScalarApiReference("/docs", options => options.WithTitle("SpillSense API"));

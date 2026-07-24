@@ -7,6 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
+import exportHandler from "../../api/incidents/export.js";
 import listHandler from "../../api/incidents/index.js";
 import geojsonHandler from "../../api/incidents/geojson.js";
 import detailHandler from "../../api/incidents/[reportNumber].js";
@@ -107,6 +108,27 @@ test("trend is chronological YYYY-MM", () => {
   for (const p of points) assert.match(p.month, /^\d{4}-\d{2}$/);
   const sorted = [...points].sort((a, b) => a.month.localeCompare(b.month));
   assert.deepEqual(points, sorted);
+});
+
+test("csv export streams filtered rows with header and quoting", () => {
+  const req = { url: "/api/incidents/export?county=Thurston", query: {} };
+  const res = {
+    statusCode: 200, headers: {}, body: "",
+    setHeader(k, v) { this.headers[k] = v; },
+    end(chunk) { this.body = chunk ?? ""; },
+  };
+  exportHandler(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.match(res.headers["Content-Type"], /text\/csv/);
+  assert.match(res.headers["Content-Disposition"], /attachment/);
+
+  const lines = res.body.trim().split("\r\n");
+  assert.match(lines[0], /^ReportNumber,ReportedAtUtc/);
+  const expected = invoke(listHandler, "/api/incidents?county=Thurston").json.total;
+  assert.equal(lines.length - 1, expected);
+
+  assert.equal(invoke(exportHandler, "/api/incidents/export?medium=Lava").status, 400);
 });
 
 test("reference and audit endpoints serve the snapshot", () => {

@@ -155,6 +155,8 @@ button { font: inherit; color: inherit; }
   padding: 14px 18px 10px;
 }
 .card-meta { font-size: 12.5px; color: var(--ink-3); }
+.card-head-actions { display: flex; align-items: center; gap: 12px; }
+a.btn { display: inline-flex; align-items: center; text-decoration: none; }
 
 /* -------------------------------- filters -------------------------------- */
 .filters { padding: 14px 18px 12px; }

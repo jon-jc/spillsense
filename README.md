@@ -116,6 +116,9 @@ Interactive API reference lives at **`/docs`** (OpenAPI document at `/openapi/v1
 | `GET /api/stats/summary` | Counts + volumes rolled up by medium, category, source, status |
 | `GET /api/stats/trend` | Monthly incident counts and spilled volume |
 | `GET /api/stats/counties` | Per-county rollup with FIPS codes |
+| `GET /api/incidents/export` | Filtered incident set as a CSV attachment |
+| `GET /api/counties` | Reference data: all 39 counties with FIPS + Ecology regions |
+| `GET /api/reports/annual/{year}` | Composed annual report: totals, quarters, top counties/substances, largest incidents, year-over-year |
 | `GET /api/imports` | Import-run audit trail |
 | `GET /api/imports/{id}/quarantine` | Quarantined rows with failure reasons |
 
@@ -144,7 +147,9 @@ Built milestone by milestone via pull requests:
 | M2 | ETL intake pipeline: validation, quarantine, idempotent upserts | ✅ |
 | M3 | REST API: filtering, paging, stats, GeoJSON | ✅ |
 | M4 | GIS dashboard: Leaflet map, charts, incident explorer; Vercel deployment | ✅ |
-| M5 | Reporting: rollups, CSV export, documentation | ⏳ |
+| M5 | Reporting: annual rollups, CSV export, architecture docs | ✅ |
+
+Design rationale, data-flow diagrams, and the testing strategy live in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## License
 
