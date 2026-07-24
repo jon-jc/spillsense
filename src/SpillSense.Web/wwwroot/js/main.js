@@ -98,7 +98,14 @@ const handleFilterChange = debounce((filters) => {
   refreshAll(filters);
 }, 120);
 
+function syncExportLink(filters) {
+  const params = new URLSearchParams(filters);
+  const qs = params.toString();
+  document.getElementById("export-csv").href = `api/incidents/export${qs ? `?${qs}` : ""}`;
+}
+
 function renderChips(filters) {
+  syncExportLink(filters);
   const holder = document.getElementById("filter-chips");
   const entries = Object.entries(filters);
   document.getElementById("f-clear").hidden = entries.length === 0;

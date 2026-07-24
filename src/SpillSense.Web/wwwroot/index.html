@@ -164,7 +164,10 @@
     <section class="card table-card" aria-label="Incident records">
       <div class="card-head">
         <h2>Incident records</h2>
-        <span id="table-count" class="card-meta"></span>
+        <div class="card-head-actions">
+          <span id="table-count" class="card-meta"></span>
+          <a id="export-csv" class="btn" href="api/incidents/export" download>Export CSV</a>
+        </div>
       </div>
       <div class="table-scroll">
         <table id="incident-table">

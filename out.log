@@ -1,0 +1,101 @@
+Using launch settings from src\SpillSense.Web\Properties\launchSettings.json...
+info: Microsoft.EntityFrameworkCore.Migrations[20411]
+      Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (7ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsLock' AND "type" = 'table';
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-07-24 00:21:11.248086+00:00');
+      SELECT changes();
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+          "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
+          "ProductVersion" TEXT NOT NULL
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";
+info: Microsoft.EntityFrameworkCore.Migrations[20405]
+      No migrations were applied. The database is already up to date.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "__EFMigrationsLock";
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5199
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\jonat\Desktop\gis\spillsense\src\SpillSense.Web
+warn: Microsoft.EntityFrameworkCore.Query[10103]
+      The query uses the 'First'/'FirstOrDefault' operator without 'OrderBy' and filter operators. This may lead to unpredictable results.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@start='?' (DbType = DateTime), @end='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) AS "Count", COALESCE(SUM(CAST("s0"."QuantityGallons" AS REAL)), 0.0) AS "Gallons", COALESCE(SUM(CAST("s0"."RecoveredGallons" AS REAL)), 0.0) AS "Recovered"
+      FROM (
+          SELECT "s"."QuantityGallons", "s"."RecoveredGallons", 1 AS "Key"
+          FROM "SpillIncidents" AS "s"
+          WHERE "s"."ReportedAtUtc" >= @start AND "s"."ReportedAtUtc" < @end
+      ) AS "s0"
+      GROUP BY "s0"."Key"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@start='?' (DbType = DateTime), @end='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT "s0"."Key" AS "Quarter", COUNT(*) AS "Count", COALESCE(SUM(CAST("s0"."QuantityGallons" AS REAL)), 0.0) AS "Gallons"
+      FROM (
+          SELECT "s"."QuantityGallons", (CAST(strftime('%m', "s"."ReportedAtUtc") AS INTEGER) - 1) / 3 + 1 AS "Key"
+          FROM "SpillIncidents" AS "s"
+          WHERE "s"."ReportedAtUtc" >= @start AND "s"."ReportedAtUtc" < @end
+      ) AS "s0"
+      GROUP BY "s0"."Key"
+      ORDER BY "s0"."Key"
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      System.InvalidOperationException: The LINQ expression 'DbSet<SpillIncident>()
+          .Where(s => s.ReportedAtUtc >= @start && s.ReportedAtUtc < @end)
+          .Where(s => s.CountyId != null)
+          .LeftJoin(
+              inner: DbSet<County>(), 
+              outerKeySelector: s => EF.Property<int?>(s, "CountyId"), 
+              innerKeySelector: c => EF.Property<int?>(c, "Id"), 
+              resultSelector: (o, i) => new TransparentIdentifier<SpillIncident, County>(
+                  Outer = o, 
+                  Inner = i
+              ))
+          .GroupBy(s => s.Inner.Name)
+          .Select(g => new AnnualBucketDto(
+              g.Key, 
+              g
+                  .AsQueryable()
+                  .Count(), 
+              Math.Round(
+                  value: g
+                      .AsQueryable()
+                      .Sum(e => (double?)e.Outer.QuantityGallons) ?? 0, 
+                  digits: 1)
+          ))
+          .OrderByDescending(e0 => e0.Count)' could not be translated. Either rewrite the query in a form that can be translated, or switch to client evaluation explicitly by inserting a call to 'AsEnumerable', 'AsAsyncEnumerable', 'ToList', or 'ToListAsync'. See https://go.microsoft.com/fwlink/?linkid=2101038 for more information.
+         at Microsoft.EntityFrameworkCore.Query.QueryableMethodTranslatingExpressionVisitor.Translate(Expression expression)
+         at Microsoft.EntityFrameworkCore.Query.QueryCompilationContext.CreateQueryExecutorExpression[TResult](Expression query)
+         at Microsoft.EntityFrameworkCore.Query.QueryCompilationContext.CreateQueryExecutor[TResult](Expression query)
+         at Microsoft.EntityFrameworkCore.Storage.Database.CompileQuery[TResult](Expression query, Boolean async)
+         at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.CompileQueryCore[TResult](IDatabase database, Expression query, IModel model, Boolean async)
+         at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.<>c__DisplayClass11_0`1.<ExecuteCore>b__0()
+         at Microsoft.EntityFrameworkCore.Query.Internal.CompiledQueryCache.GetOrAddQuery[TResult](Object cacheKey, Func`1 compiler)
+         at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.ExecuteCore[TResult](Expression query, Boolean async, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.ExecuteAsync[TResult](Expression query, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Query.Internal.EntityQueryProvider.ExecuteAsync[TResult](Expression expression, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Query.Internal.EntityQueryable`1.GetAsyncEnumerator(CancellationToken cancellationToken)
+         at System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1.GetAsyncEnumerator()
+         at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+         at SpillSense.Web.Api.ReportEndpoints.AnnualAsync(Int32 year, SpillSenseDbContext db, CancellationToken cancellationToken) in C:\Users\jonat\Desktop\gis\spillsense\src\SpillSense.Web\Api\ReportEndpoints.cs:line 57
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.ExecuteTaskResult[T](Task`1 task, HttpContext httpContext)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
