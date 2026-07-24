@@ -189,6 +189,18 @@ public class IncidentApiTests : IClassFixture<ApiFixture>
     }
 
     [Fact]
+    public async Task Counties_endpoint_serves_reference_data()
+    {
+        var body = await GetJson("/api/counties");
+
+        Assert.Equal(39, body.GetArrayLength());
+        var thurston = body.EnumerateArray().Single(c => c.GetProperty("name").GetString() == "Thurston");
+        Assert.Equal("53067", thurston.GetProperty("fipsCode").GetString());
+        Assert.Equal("Southwest", thurston.GetProperty("region").GetString());
+        Assert.True(thurston.GetProperty("isCoastal").GetBoolean());
+    }
+
+    [Fact]
     public async Task OpenApi_document_is_served()
     {
         using var client = _fixture.CreateClient();

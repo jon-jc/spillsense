@@ -1,0 +1,12 @@
+{
+  "name": "spillsense",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Spill incident data management & analytics platform",
+  "scripts": {
+    "test": "node --test \"tools/tests/**/*.test.mjs\"",
+    "generate-data": "node tools/generate-sample-data.mjs",
+    "export-snapshot": "node tools/export-vercel-data.mjs"
+  }
+}

@@ -64,9 +64,13 @@ app.MapGet("/healthz", async (SpillSenseDbContext db) =>
         : Results.Problem("Database unreachable", statusCode: StatusCodes.Status503ServiceUnavailable);
 }).WithTags("Health");
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.MapIncidentEndpoints();
 app.MapStatsEndpoints();
 app.MapImportEndpoints();
+app.MapCountyEndpoints();
 
 app.MapOpenApi();
 app.MapScalarApiReference("/docs", options => options.WithTitle("SpillSense API"));
