@@ -6,6 +6,8 @@
 
 **Spill incident data management & analytics platform** — ASP.NET Core, Entity Framework Core, and Leaflet.
 
+**Live: [spillsense.vercel.app](https://spillsense.vercel.app)**
+
 SpillSense models the data systems that support oil-spill prevention, preparedness, and response programs: structured incident records with spatial coordinates, a validated ETL intake pipeline, a filterable REST API, an interactive GIS dashboard, and reporting/export tooling for program analysts.
 
 ## Why this exists
