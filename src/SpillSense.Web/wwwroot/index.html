@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SpillSense — Spill Incident Analytics</title>
+  <meta name="description" content="Spill incident data management and analytics for Washington State: interactive map, trends, and intake auditing.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3C11 10 6 15.5 6 21a10 10 0 0 0 20 0c0-5.5-5-11-10-18z' fill='%232a78d6'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="lib/leaflet/leaflet.css">
+  <link rel="stylesheet" href="lib/markercluster/MarkerCluster.css">
+  <link rel="stylesheet" href="lib/markercluster/MarkerCluster.Default.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M16 3C11 10 6 15.5 6 21a10 10 0 0 0 20 0c0-5.5-5-11-10-18z"/>
+          <path class="brand-wave" d="M10.5 21.5c1.8-1.6 3.6-1.6 5.4 0s3.7 1.6 5.6 0" fill="none" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <div class="brand-text">
+          <span class="brand-name">SpillSense</span>
+          <span class="brand-sub">Spill incident analytics — Washington State</span>
+        </div>
+      </div>
+      <nav class="topbar-nav" aria-label="Primary">
+        <a class="nav-link" href="#intake">Data intake</a>
+        <a class="nav-link" href="/docs" data-live-only>API docs</a>
+        <a class="nav-link" href="https://github.com/jon-jc/spillsense" rel="noopener">GitHub</a>
+        <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle color theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7" stroke-linecap="round"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.4 14.2A8.5 8.5 0 0 1 9.8 3.6a8.5 8.5 0 1 0 10.6 10.6z"/></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="page">
+
+    <!-- Filters -->
+    <section class="filters card" aria-label="Filters">
+      <div class="filter-grid">
+        <label class="field">
+          <span class="field-label">Search</span>
+          <input id="f-search" type="search" placeholder="Substance, party, waterbody, report #…" autocomplete="off">
+        </label>
+        <label class="field">
+          <span class="field-label">County</span>
+          <select id="f-county"><option value="">All counties</option></select>
+        </label>
+        <label class="field">
+          <span class="field-label">Ecology region</span>
+          <select id="f-region">
+            <option value="">All regions</option>
+            <option>Northwest</option><option>Southwest</option>
+            <option>Central</option><option>Eastern</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Medium</span>
+          <select id="f-medium">
+            <option value="">All media</option>
+            <option value="MarineWater">Marine water</option>
+            <option value="FreshWater">Fresh water</option>
+            <option value="Groundwater">Groundwater</option>
+            <option value="Land">Land</option>
+            <option value="Air">Air</option>
+            <option value="Unknown">Unknown</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Substance</span>
+          <select id="f-category">
+            <option value="">All substances</option>
+            <option value="CrudeOil">Crude oil</option>
+            <option value="DieselFuel">Diesel fuel</option>
+            <option value="Gasoline">Gasoline</option>
+            <option value="JetFuel">Jet fuel</option>
+            <option value="HeavyFuelOil">Heavy fuel oil</option>
+            <option value="LubeOrHydraulicOil">Lube / hydraulic oil</option>
+            <option value="BilgeOrOilyWater">Bilge / oily water</option>
+            <option value="Chemical">Chemical</option>
+            <option value="Sewage">Sewage</option>
+            <option value="Other">Other</option>
+            <option value="Unknown">Unknown</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Source</span>
+          <select id="f-source">
+            <option value="">All sources</option>
+            <option>Vessel</option><option>Facility</option><option>Pipeline</option>
+            <option>Vehicle</option><option value="RailCar">Rail car</option>
+            <option>Aircraft</option><option>Other</option><option>Unknown</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Status</span>
+          <select id="f-status">
+            <option value="">All statuses</option>
+            <option value="Reported">Reported</option>
+            <option value="UnderInvestigation">Under investigation</option>
+            <option value="CleanupInProgress">Cleanup in progress</option>
+            <option value="Closed">Closed</option>
+            <option value="ReferredToOtherAgency">Referred</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">From</span>
+          <input id="f-from" type="date">
+        </label>
+        <label class="field">
+          <span class="field-label">To</span>
+          <input id="f-to" type="date">
+        </label>
+        <div class="field field-actions">
+          <button id="f-clear" class="btn btn-ghost" type="button" hidden>Clear all</button>
+        </div>
+      </div>
+      <div id="filter-chips" class="chips" role="status" aria-live="polite"></div>
+    </section>
+
+    <!-- KPIs -->
+    <section class="kpis" aria-label="Key figures">
+      <div class="kpi card"><span class="kpi-label">Incidents</span><span id="kpi-count" class="kpi-value">—</span><span id="kpi-count-note" class="kpi-note"></span></div>
+      <div class="kpi card"><span class="kpi-label">Gallons spilled</span><span id="kpi-gallons" class="kpi-value">—</span><span class="kpi-note">estimated, all substances</span></div>
+      <div class="kpi card"><span class="kpi-label">Gallons recovered</span><span id="kpi-recovered" class="kpi-value">—</span><span id="kpi-recovered-note" class="kpi-note"></span></div>
+      <div class="kpi card"><span class="kpi-label">Mapped locations</span><span id="kpi-mapped" class="kpi-value">—</span><span id="kpi-mapped-note" class="kpi-note"></span></div>
+    </section>
+
+    <!-- Map + charts -->
+    <section class="viz-grid">
+      <div class="card map-card">
+        <div class="card-head">
+          <h2>Incident map</h2>
+          <span id="map-count" class="card-meta"></span>
+        </div>
+        <div id="map" role="application" aria-label="Map of spill incidents"></div>
+        <div class="map-legend" id="map-legend" aria-hidden="true"></div>
+      </div>
+      <div class="charts-col">
+        <div class="card chart-card">
+          <div class="card-head"><h2>Incidents per month</h2></div>
+          <div class="chart-box"><canvas id="chart-trend"></canvas></div>
+        </div>
+        <div class="card chart-card">
+          <div class="card-head"><h2>By substance</h2></div>
+          <div class="chart-box chart-box-donut">
+            <canvas id="chart-category"></canvas>
+            <div class="donut-center"><span id="donut-total"></span><span class="donut-caption">incidents</span></div>
+          </div>
+        </div>
+        <div class="card chart-card">
+          <div class="card-head"><h2>By medium affected</h2></div>
+          <div class="chart-box"><canvas id="chart-medium"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Incident table -->
+    <section class="card table-card" aria-label="Incident records">
+      <div class="card-head">
+        <h2>Incident records</h2>
+        <span id="table-count" class="card-meta"></span>
+      </div>
+      <div class="table-scroll">
+        <table id="incident-table">
+          <thead>
+            <tr>
+              <th><button class="th-sort" data-sort="reportedAt" type="button">Reported <span class="sort-ind"></span></button></th>
+              <th>Report #</th>
+              <th>Substance</th>
+              <th>County</th>
+              <th>Source</th>
+              <th class="num"><button class="th-sort" data-sort="quantity" type="button">Gallons <span class="sort-ind"></span></button></th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="incident-rows"></tbody>
+        </table>
+      </div>
+      <div class="table-foot">
+        <span id="page-info" class="card-meta"></span>
+        <div class="pager">
+          <button id="page-prev" class="btn btn-ghost" type="button">‹ Prev</button>
+          <button id="page-next" class="btn btn-ghost" type="button">Next ›</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Data intake -->
+    <section id="intake" class="card intake-card" aria-label="Data intake audit">
+      <div class="card-head">
+        <h2>Data intake</h2>
+        <span class="card-meta">import runs &amp; quarantine audit</span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Started</th><th>Source file</th><th>Outcome</th><th class="num">Rows</th><th class="num">Inserted</th><th class="num">Updated</th><th class="num">Quarantined</th><th></th></tr>
+          </thead>
+          <tbody id="import-rows"></tbody>
+        </table>
+      </div>
+      <div id="quarantine-panel" class="quarantine" hidden>
+        <h3 id="quarantine-title"></h3>
+        <div id="quarantine-rows"></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>SpillSense — a portfolio data system by Jonathan Cho. Sample data is synthetic; it is realistic in shape and geography but does not describe real incidents.</p>
+    </footer>
+  </main>
+
+  <!-- Detail drawer -->
+  <div id="drawer-scrim" class="drawer-scrim" hidden></div>
+  <aside id="drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
+    <div class="drawer-head">
+      <div>
+        <span id="drawer-badge" class="pill"></span>
+        <h2 id="drawer-title"></h2>
+        <span id="drawer-sub" class="card-meta"></span>
+      </div>
+      <button id="drawer-close" class="icon-btn" type="button" aria-label="Close details">✕</button>
+    </div>
+    <div id="drawer-body" class="drawer-body"></div>
+  </aside>
+
+  <div id="toast" class="toast" role="alert" hidden></div>
+
+  <script src="lib/leaflet/leaflet.js"></script>
+  <script src="lib/markercluster/leaflet.markercluster.js"></script>
+  <script src="lib/chartjs/chart.umd.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

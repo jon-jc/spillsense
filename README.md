@@ -21,13 +21,28 @@ Spill response programs live and die by data quality: a responder needs to know 
 ```
 src/
   SpillSense.Domain/          Entities, enums, and geography rules. No dependencies.
-  SpillSense.Infrastructure/  EF Core DbContext, configurations, migrations, seed data.
-  SpillSense.Web/             ASP.NET Core host: API endpoints + dashboard (coming).
+  SpillSense.Infrastructure/  EF Core DbContext, configurations, migrations, ETL pipeline.
+  SpillSense.Web/             ASP.NET Core host: REST API + the dashboard (wwwroot).
+api/                          Serverless functions (Vercel) serving the same API contract
+                              from a published data snapshot. See "Deploying" below.
 tests/
-  SpillSense.Tests/           Unit + integration tests (in-memory SQLite runs real migrations).
+  SpillSense.Tests/           .NET unit + integration tests (real migrations on SQLite).
+tools/tests/                  node:test contract tests for the serverless API layer.
 ```
 
 The default database provider is SQLite so the project runs anywhere with zero setup. The EF model is kept provider-portable — pointing the connection string at SQL Server is a drop-in swap, which mirrors a common agency deployment target.
+
+## The dashboard
+
+A dependency-light single-page GIS dashboard (vanilla ES modules, Leaflet, Chart.js — no build step) served at `/`:
+
+- **Incident map** — clustered vector markers colored by substance category and sized by spill volume (log scale), with light/dark basemaps and a category legend.
+- **Analytics** — animated KPI tiles (incidents, spilled/recovered gallons, georeferenced share), monthly trend, substance mix, and medium-affected charts, all driven by one validated color system (fixed hue-per-category, dark-mode steps chosen for the dark surface rather than auto-inverted).
+- **Every filter drives every panel** — search, county, Ecology region, medium, substance, source, status, and date range combine with AND across the map, charts, KPIs, and table; active filters render as removable chips.
+- **Shareable state** — filters live in the querystring, so any view is a permalink.
+- **Incident explorer** — sortable, paged records table with inline volume bars and status pills; row click opens a detail drawer and flies the map to the incident.
+- **Intake audit** — import runs with outcome chips; quarantined rows are reviewable with the raw CSV line and every validation failure.
+- **Cared-for details** — full light/dark theming, keyboard access and focus management, `prefers-reduced-motion` support, skeleton loading states, and graceful error toasts.
 
 ### Data model
 
@@ -106,6 +121,19 @@ Interactive API reference lives at **`/docs`** (OpenAPI document at `/openapi/v1
 
 All filters combine with AND and are shared across list, GeoJSON, and stats endpoints. Bad input returns RFC 9457 problem details naming every invalid parameter — e.g. `?medium=Lava` lists the accepted values.
 
+## Deploying
+
+**ASP.NET Core host (system of record).** `dotnet publish src/SpillSense.Web` and run behind your web server of choice; point `ConnectionStrings:SpillSense` at SQLite or SQL Server. This host owns the database, intake pipeline, and interactive API docs.
+
+**Vercel (read-only replica).** The `api/` directory implements the same API contract as Node serverless functions, serving a published data snapshot (`api/_lib/data.json`) exported from the system of record:
+
+```bash
+node tools/export-vercel-data.mjs http://localhost:5178   # refresh the published snapshot
+npx vercel deploy                                          # ship dashboard + API
+```
+
+The dashboard is host-agnostic — it calls the same endpoints either way, and `npm test` runs contract tests against the serverless layer so the two hosts can't drift apart.
+
 ## Roadmap
 
 Built milestone by milestone via pull requests:
@@ -115,7 +143,7 @@ Built milestone by milestone via pull requests:
 | M1 | Solution scaffold, domain model, EF Core persistence, CI | ✅ |
 | M2 | ETL intake pipeline: validation, quarantine, idempotent upserts | ✅ |
 | M3 | REST API: filtering, paging, stats, GeoJSON | ✅ |
-| M4 | GIS dashboard: Leaflet map, charts, incident explorer | ⏳ |
+| M4 | GIS dashboard: Leaflet map, charts, incident explorer; Vercel deployment | ✅ |
 | M5 | Reporting: rollups, CSV export, documentation | ⏳ |
 
 ## License
