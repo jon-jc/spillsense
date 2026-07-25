@@ -32,3 +32,4 @@ Thumbs.db
 
 # Stray process logs
 *.log
+.vercel
