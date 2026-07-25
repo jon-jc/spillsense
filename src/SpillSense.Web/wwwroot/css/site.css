@@ -259,9 +259,12 @@ a.btn { display: inline-flex; align-items: center; text-decoration: none; }
 .chart-card { padding-bottom: 12px; }
 .chart-box { position: relative; height: 200px; padding: 4px 14px 0; }
 .chart-box-donut { height: 220px; display: grid; place-items: center; }
+/* Positioned on the ring's actual center by the donutCenterLabel plugin;
+   the 50%/50% here is only the pre-first-draw fallback. */
 .donut-center {
-  position: absolute; inset: 0; display: grid; place-content: center; text-align: center;
-  pointer-events: none; padding-top: 2px;
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: grid; justify-items: center; text-align: center;
+  line-height: 1.15; pointer-events: none;
 }
 .donut-center span:first-child { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
 .donut-caption { font-size: 11.5px; color: var(--ink-3); }

@@ -95,15 +95,40 @@ export function renderTrend(points) {
   });
 }
 
+/**
+ * Pins the HTML center label to the doughnut's true center.
+ *
+ * The legend occupies the right of the chart box, so Chart.js draws the ring
+ * left of the box's midpoint — centering the label on the box would leave it
+ * visibly off the ring. The arc reports its own center, so use that, and
+ * re-apply on every draw so resizes and legend reflows stay aligned.
+ */
+const donutCenterLabel = {
+  id: "donutCenterLabel",
+  afterDraw(chart) {
+    const arc = chart.getDatasetMeta(0)?.data?.[0];
+    const label = document.getElementById("donut-total")?.parentElement;
+    if (!arc || !label) return;
+
+    const { canvas } = chart;
+    label.style.left = `${canvas.offsetLeft + arc.x}px`;
+    label.style.top = `${canvas.offsetTop + arc.y}px`;
+  },
+};
+
 export function renderCategories(buckets, total) {
   const ctx = document.getElementById("chart-category");
   categoryChart?.destroy();
 
   // Identity encoding: top categories keep their fixed hue; the tail folds
-  // into a muted "Other" so hues are never cycled or invented.
-  const top = buckets.filter((b) => b.count > 0).slice(0, 6);
-  const rest = buckets.slice(6).reduce((sum, b) => sum + b.count, 0);
-  const labels = [...top.map((b) => labelize(b.key)), ...(rest ? ["Other"] : [])];
+  // into a single muted slice so hues are never cycled or invented. It is
+  // labelled "Remaining categories" rather than "Other", because "Other" is
+  // itself a substance category that can appear among the top slices.
+  const present = buckets.filter((b) => b.count > 0);
+  const top = present.slice(0, 6);
+  const rest = present.slice(6).reduce((sum, b) => sum + b.count, 0);
+
+  const labels = [...top.map((b) => labelize(b.key)), ...(rest ? ["Remaining categories"] : [])];
   const data = [...top.map((b) => b.count), ...(rest ? [rest] : [])];
   const colors = [...top.map((b) => categoryColor(b.key)), ...(rest ? [tones().muted] : [])];
 
@@ -111,6 +136,7 @@ export function renderCategories(buckets, total) {
 
   categoryChart = new Chart(ctx, {
     type: "doughnut",
+    plugins: [donutCenterLabel],
     data: {
       labels,
       datasets: [{
