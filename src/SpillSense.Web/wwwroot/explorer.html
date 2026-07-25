@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SpillSense API Explorer</title>
+  <meta name="description" content="Interactive SpillSense API explorer: browse every endpoint and execute live requests.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3C11 10 6 15.5 6 21a10 10 0 0 0 20 0c0-5.5-5-11-10-18z' fill='%232a78d6'/%3E%3C/svg%3E">
+  <style>
+    html, body { margin: 0; height: 100%; }
+    .explorer-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 18px; border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+      font: 13.5px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #fcfcfb; color: #52514e;
+    }
+    .explorer-bar a { color: #2a78d6; text-decoration: none; padding: 5px 9px; border-radius: 7px; }
+    .explorer-bar a:hover { background: rgba(42, 120, 214, 0.10); }
+    .explorer-bar .sep { opacity: 0.4; }
+    @media (prefers-color-scheme: dark) {
+      .explorer-bar { background: #1a1a19; color: #c3c2b7; }
+      .explorer-bar a { color: #3987e5; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="explorer-bar">
+    <a href="/">← Dashboard</a>
+    <span class="sep">/</span>
+    <a href="docs.html">API reference</a>
+    <span class="sep">/</span>
+    <span>Interactive explorer</span>
+  </nav>
+
+  <div id="scalar-explorer"></div>
+
+  <!-- Vendored so the explorer works offline and without a CDN. -->
+  <script src="lib/scalar/standalone.js"></script>
+  <script>
+    // Prefer the live document the ASP.NET host generates; fall back to the
+    // published static copy on the read-only serverless deployment.
+    (async () => {
+      let url = "openapi.json";
+      try {
+        const live = await fetch("openapi/v1.json", { method: "HEAD" });
+        if (live.ok) url = "openapi/v1.json";
+      } catch { /* keep the static document */ }
+
+      Scalar.createApiReference("#scalar-explorer", {
+        url,
+        hideModels: false,
+        hideDownloadButton: false,
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -38,7 +38,7 @@ async function boot() {
   });
 
   populateCounties();
-  hideUnavailableNav();
+  hideWriteOnlyControls();
   // A fresh import changes the underlying data, so re-run every panel.
   initImportUpload(() => refreshAll(currentFilters()));
   onFiltersChanged(handleFilterChange);
@@ -68,11 +68,12 @@ function syncFieldsFromUrl() {
   renderChips(filters);
 }
 
-/** The interactive API reference only exists on the ASP.NET host; hide the
-    link on hosts (e.g. the serverless deployment) that don't serve it. */
-async function hideUnavailableNav() {
+/** CSV intake needs the database and ETL pipeline, which only the ASP.NET host
+    has. /healthz answers only when that host is up with a reachable database,
+    so it is a truthful probe for whether writes can succeed at all. */
+async function hideWriteOnlyControls() {
   try {
-    const probe = await fetch("openapi/v1.json");
+    const probe = await fetch("healthz");
     if (!probe.ok) throw new Error();
   } catch {
     for (const el of document.querySelectorAll("[data-live-only]")) el.hidden = true;

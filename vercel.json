@@ -3,6 +3,10 @@
   "framework": null,
   "buildCommand": "",
   "outputDirectory": "src/SpillSense.Web/wwwroot",
+  "rewrites": [
+    { "source": "/docs", "destination": "/docs.html" },
+    { "source": "/explorer", "destination": "/explorer.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

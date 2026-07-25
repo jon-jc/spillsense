@@ -1,0 +1,2421 @@
+{
+ "openapi": "3.1.1",
+ "info": {
+  "title": "SpillSense API",
+  "description": "Spill incident data management & analytics: filterable incident queries, GeoJSON for mapping, statistical rollups, and import-run auditing.",
+  "version": "1.0.0"
+ },
+ "servers": [
+  {
+   "url": "http://localhost:5178/"
+  }
+ ],
+ "paths": {
+  "/healthz": {
+   "get": {
+    "tags": [
+     "Health"
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/counties": {
+   "get": {
+    "tags": [
+     "Reference data"
+    ],
+    "summary": "All 39 Washington counties with Ecology region assignments",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/CountyDto"
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/incidents/export": {
+   "get": {
+    "tags": [
+     "Incidents"
+    ],
+    "summary": "Export incidents as CSV",
+    "description": "Streams the filtered incident set as a CSV attachment. Accepts the same filters as the incident list.",
+    "parameters": [
+     {
+      "name": "County",
+      "in": "query",
+      "description": "Washington county name, without the \"County\" suffix (e.g. Thurston).",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Region",
+      "in": "query",
+      "description": "Department of Ecology regional office.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "Northwest",
+        "Southwest",
+        "Central",
+        "Eastern"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Medium",
+      "in": "query",
+      "description": "Environmental medium primarily affected.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "MarineWater",
+        "FreshWater",
+        "Groundwater",
+        "Land",
+        "Air"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Category",
+      "in": "query",
+      "description": "Substance reporting category.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "CrudeOil",
+        "DieselFuel",
+        "Gasoline",
+        "JetFuel",
+        "HeavyFuelOil",
+        "LubeOrHydraulicOil",
+        "BilgeOrOilyWater",
+        "Chemical",
+        "Sewage",
+        "Other"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Source",
+      "in": "query",
+      "description": "Kind of source the spill originated from.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "Vessel",
+        "Facility",
+        "Pipeline",
+        "Vehicle",
+        "RailCar",
+        "Aircraft",
+        "Other"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Status",
+      "in": "query",
+      "description": "Lifecycle state of the incident record.",
+      "schema": {
+       "enum": [
+        "Reported",
+        "UnderInvestigation",
+        "CleanupInProgress",
+        "Closed",
+        "ReferredToOtherAgency"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "From",
+      "in": "query",
+      "description": "Inclusive lower bound on the report date (date or ISO 8601 date-time, UTC).",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "To",
+      "in": "query",
+      "description": "Exclusive upper bound on the report date.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Search",
+      "in": "query",
+      "description": "Case-insensitive text match across substance, description, responsible party, location, waterbody, and report number.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Bbox",
+      "in": "query",
+      "description": "Spatial filter as minLon,minLat,maxLon,maxLat in WGS 84.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "MinGallons",
+      "in": "query",
+      "description": "Only incidents with an estimated quantity at or above this value.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+       "type": [
+        "number",
+        "string"
+       ],
+       "format": "double"
+      }
+     },
+     {
+      "name": "HasCoordinates",
+      "in": "query",
+      "description": "Restrict to incidents that do (true) or do not (false) carry map coordinates.",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "Page",
+      "in": "query",
+      "description": "1-based page number. Defaults to 1.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)$",
+       "type": [
+        "integer",
+        "string"
+       ],
+       "format": "int32"
+      }
+     },
+     {
+      "name": "PageSize",
+      "in": "query",
+      "description": "Records per page, between 1 and 200. Defaults to 25.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)$",
+       "type": [
+        "integer",
+        "string"
+       ],
+       "format": "int32"
+      }
+     },
+     {
+      "name": "Sort",
+      "in": "query",
+      "description": "Sort order; prefix with '-' for descending. Defaults to -reportedAt.",
+      "schema": {
+       "enum": [
+        "reportedAt",
+        "-reportedAt",
+        "quantity",
+        "-quantity"
+       ],
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK"
+     }
+    }
+   }
+  },
+  "/api/reports/annual/{year}": {
+   "get": {
+    "tags": [
+     "Reports"
+    ],
+    "summary": "Annual program report",
+    "description": "Composed rollup for one calendar year: totals, quarterly breakdown, top counties and substances by volume, largest incidents, and year-over-year change. Shaped for report tooling (SSRS-style) and briefings.",
+    "parameters": [
+     {
+      "name": "year",
+      "in": "path",
+      "description": "Calendar year to report on, between 1990 and 2100.",
+      "required": true,
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)$",
+       "type": "integer",
+       "format": "int32"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AnnualReportDto"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/problem+json": {
+        "schema": {
+         "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/incidents": {
+   "get": {
+    "tags": [
+     "Incidents"
+    ],
+    "summary": "List incidents",
+    "description": "Filterable, paged incident list. All filters combine with AND.",
+    "parameters": [
+     {
+      "name": "County",
+      "in": "query",
+      "description": "Washington county name, without the \"County\" suffix (e.g. Thurston).",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Region",
+      "in": "query",
+      "description": "Department of Ecology regional office.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "Northwest",
+        "Southwest",
+        "Central",
+        "Eastern"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Medium",
+      "in": "query",
+      "description": "Environmental medium primarily affected.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "MarineWater",
+        "FreshWater",
+        "Groundwater",
+        "Land",
+        "Air"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Category",
+      "in": "query",
+      "description": "Substance reporting category.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "CrudeOil",
+        "DieselFuel",
+        "Gasoline",
+        "JetFuel",
+        "HeavyFuelOil",
+        "LubeOrHydraulicOil",
+        "BilgeOrOilyWater",
+        "Chemical",
+        "Sewage",
+        "Other"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Source",
+      "in": "query",
+      "description": "Kind of source the spill originated from.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "Vessel",
+        "Facility",
+        "Pipeline",
+        "Vehicle",
+        "RailCar",
+        "Aircraft",
+        "Other"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Status",
+      "in": "query",
+      "description": "Lifecycle state of the incident record.",
+      "schema": {
+       "enum": [
+        "Reported",
+        "UnderInvestigation",
+        "CleanupInProgress",
+        "Closed",
+        "ReferredToOtherAgency"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "From",
+      "in": "query",
+      "description": "Inclusive lower bound on the report date (date or ISO 8601 date-time, UTC).",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "To",
+      "in": "query",
+      "description": "Exclusive upper bound on the report date.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Search",
+      "in": "query",
+      "description": "Case-insensitive text match across substance, description, responsible party, location, waterbody, and report number.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Bbox",
+      "in": "query",
+      "description": "Spatial filter as minLon,minLat,maxLon,maxLat in WGS 84.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "MinGallons",
+      "in": "query",
+      "description": "Only incidents with an estimated quantity at or above this value.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+       "type": [
+        "number",
+        "string"
+       ],
+       "format": "double"
+      }
+     },
+     {
+      "name": "HasCoordinates",
+      "in": "query",
+      "description": "Restrict to incidents that do (true) or do not (false) carry map coordinates.",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "Page",
+      "in": "query",
+      "description": "1-based page number. Defaults to 1.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)$",
+       "type": [
+        "integer",
+        "string"
+       ],
+       "format": "int32"
+      }
+     },
+     {
+      "name": "PageSize",
+      "in": "query",
+      "description": "Records per page, between 1 and 200. Defaults to 25.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)$",
+       "type": [
+        "integer",
+        "string"
+       ],
+       "format": "int32"
+      }
+     },
+     {
+      "name": "Sort",
+      "in": "query",
+      "description": "Sort order; prefix with '-' for descending. Defaults to -reportedAt.",
+      "schema": {
+       "enum": [
+        "reportedAt",
+        "-reportedAt",
+        "quantity",
+        "-quantity"
+       ],
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PagedResultOfIncidentSummaryDto"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/problem+json": {
+        "schema": {
+         "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/incidents/geojson": {
+   "get": {
+    "tags": [
+     "Incidents"
+    ],
+    "summary": "Incidents as GeoJSON",
+    "description": "Same filters as the list endpoint; returns a FeatureCollection of incidents that carry coordinates (capped at 5000 features).",
+    "parameters": [
+     {
+      "name": "County",
+      "in": "query",
+      "description": "Washington county name, without the \"County\" suffix (e.g. Thurston).",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Region",
+      "in": "query",
+      "description": "Department of Ecology regional office.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "Northwest",
+        "Southwest",
+        "Central",
+        "Eastern"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Medium",
+      "in": "query",
+      "description": "Environmental medium primarily affected.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "MarineWater",
+        "FreshWater",
+        "Groundwater",
+        "Land",
+        "Air"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Category",
+      "in": "query",
+      "description": "Substance reporting category.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "CrudeOil",
+        "DieselFuel",
+        "Gasoline",
+        "JetFuel",
+        "HeavyFuelOil",
+        "LubeOrHydraulicOil",
+        "BilgeOrOilyWater",
+        "Chemical",
+        "Sewage",
+        "Other"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Source",
+      "in": "query",
+      "description": "Kind of source the spill originated from.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "Vessel",
+        "Facility",
+        "Pipeline",
+        "Vehicle",
+        "RailCar",
+        "Aircraft",
+        "Other"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Status",
+      "in": "query",
+      "description": "Lifecycle state of the incident record.",
+      "schema": {
+       "enum": [
+        "Reported",
+        "UnderInvestigation",
+        "CleanupInProgress",
+        "Closed",
+        "ReferredToOtherAgency"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "From",
+      "in": "query",
+      "description": "Inclusive lower bound on the report date (date or ISO 8601 date-time, UTC).",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "To",
+      "in": "query",
+      "description": "Exclusive upper bound on the report date.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Search",
+      "in": "query",
+      "description": "Case-insensitive text match across substance, description, responsible party, location, waterbody, and report number.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Bbox",
+      "in": "query",
+      "description": "Spatial filter as minLon,minLat,maxLon,maxLat in WGS 84.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "MinGallons",
+      "in": "query",
+      "description": "Only incidents with an estimated quantity at or above this value.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+       "type": [
+        "number",
+        "string"
+       ],
+       "format": "double"
+      }
+     },
+     {
+      "name": "HasCoordinates",
+      "in": "query",
+      "description": "Restrict to incidents that do (true) or do not (false) carry map coordinates.",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "Page",
+      "in": "query",
+      "description": "1-based page number. Defaults to 1.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)$",
+       "type": [
+        "integer",
+        "string"
+       ],
+       "format": "int32"
+      }
+     },
+     {
+      "name": "PageSize",
+      "in": "query",
+      "description": "Records per page, between 1 and 200. Defaults to 25.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)$",
+       "type": [
+        "integer",
+        "string"
+       ],
+       "format": "int32"
+      }
+     },
+     {
+      "name": "Sort",
+      "in": "query",
+      "description": "Sort order; prefix with '-' for descending. Defaults to -reportedAt.",
+      "schema": {
+       "enum": [
+        "reportedAt",
+        "-reportedAt",
+        "quantity",
+        "-quantity"
+       ],
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/GeoJsonFeatureCollection"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/problem+json": {
+        "schema": {
+         "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/incidents/{reportNumber}": {
+   "get": {
+    "tags": [
+     "Incidents"
+    ],
+    "summary": "Get one incident by report number",
+    "parameters": [
+     {
+      "name": "reportNumber",
+      "in": "path",
+      "description": "Report number natural key, e.g. ERTS-2025-000123.",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/IncidentDetailDto"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found"
+     }
+    }
+   }
+  },
+  "/api/stats/summary": {
+   "get": {
+    "tags": [
+     "Statistics"
+    ],
+    "summary": "Aggregate summary",
+    "description": "Counts and volumes rolled up by medium, substance category, source, and status. Accepts the same filters as the incident list.",
+    "parameters": [
+     {
+      "name": "County",
+      "in": "query",
+      "description": "Washington county name, without the \"County\" suffix (e.g. Thurston).",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Region",
+      "in": "query",
+      "description": "Department of Ecology regional office.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "Northwest",
+        "Southwest",
+        "Central",
+        "Eastern"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Medium",
+      "in": "query",
+      "description": "Environmental medium primarily affected.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "MarineWater",
+        "FreshWater",
+        "Groundwater",
+        "Land",
+        "Air"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Category",
+      "in": "query",
+      "description": "Substance reporting category.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "CrudeOil",
+        "DieselFuel",
+        "Gasoline",
+        "JetFuel",
+        "HeavyFuelOil",
+        "LubeOrHydraulicOil",
+        "BilgeOrOilyWater",
+        "Chemical",
+        "Sewage",
+        "Other"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Source",
+      "in": "query",
+      "description": "Kind of source the spill originated from.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "Vessel",
+        "Facility",
+        "Pipeline",
+        "Vehicle",
+        "RailCar",
+        "Aircraft",
+        "Other"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Status",
+      "in": "query",
+      "description": "Lifecycle state of the incident record.",
+      "schema": {
+       "enum": [
+        "Reported",
+        "UnderInvestigation",
+        "CleanupInProgress",
+        "Closed",
+        "ReferredToOtherAgency"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "From",
+      "in": "query",
+      "description": "Inclusive lower bound on the report date (date or ISO 8601 date-time, UTC).",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "To",
+      "in": "query",
+      "description": "Exclusive upper bound on the report date.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Search",
+      "in": "query",
+      "description": "Case-insensitive text match across substance, description, responsible party, location, waterbody, and report number.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Bbox",
+      "in": "query",
+      "description": "Spatial filter as minLon,minLat,maxLon,maxLat in WGS 84.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "MinGallons",
+      "in": "query",
+      "description": "Only incidents with an estimated quantity at or above this value.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+       "type": [
+        "number",
+        "string"
+       ],
+       "format": "double"
+      }
+     },
+     {
+      "name": "HasCoordinates",
+      "in": "query",
+      "description": "Restrict to incidents that do (true) or do not (false) carry map coordinates.",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "Page",
+      "in": "query",
+      "description": "1-based page number. Defaults to 1.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)$",
+       "type": [
+        "integer",
+        "string"
+       ],
+       "format": "int32"
+      }
+     },
+     {
+      "name": "PageSize",
+      "in": "query",
+      "description": "Records per page, between 1 and 200. Defaults to 25.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)$",
+       "type": [
+        "integer",
+        "string"
+       ],
+       "format": "int32"
+      }
+     },
+     {
+      "name": "Sort",
+      "in": "query",
+      "description": "Sort order; prefix with '-' for descending. Defaults to -reportedAt.",
+      "schema": {
+       "enum": [
+        "reportedAt",
+        "-reportedAt",
+        "quantity",
+        "-quantity"
+       ],
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StatsSummaryDto"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/problem+json": {
+        "schema": {
+         "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/stats/trend": {
+   "get": {
+    "tags": [
+     "Statistics"
+    ],
+    "summary": "Monthly trend",
+    "description": "Incident counts and spilled volume per calendar month.",
+    "parameters": [
+     {
+      "name": "County",
+      "in": "query",
+      "description": "Washington county name, without the \"County\" suffix (e.g. Thurston).",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Region",
+      "in": "query",
+      "description": "Department of Ecology regional office.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "Northwest",
+        "Southwest",
+        "Central",
+        "Eastern"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Medium",
+      "in": "query",
+      "description": "Environmental medium primarily affected.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "MarineWater",
+        "FreshWater",
+        "Groundwater",
+        "Land",
+        "Air"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Category",
+      "in": "query",
+      "description": "Substance reporting category.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "CrudeOil",
+        "DieselFuel",
+        "Gasoline",
+        "JetFuel",
+        "HeavyFuelOil",
+        "LubeOrHydraulicOil",
+        "BilgeOrOilyWater",
+        "Chemical",
+        "Sewage",
+        "Other"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Source",
+      "in": "query",
+      "description": "Kind of source the spill originated from.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "Vessel",
+        "Facility",
+        "Pipeline",
+        "Vehicle",
+        "RailCar",
+        "Aircraft",
+        "Other"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Status",
+      "in": "query",
+      "description": "Lifecycle state of the incident record.",
+      "schema": {
+       "enum": [
+        "Reported",
+        "UnderInvestigation",
+        "CleanupInProgress",
+        "Closed",
+        "ReferredToOtherAgency"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "From",
+      "in": "query",
+      "description": "Inclusive lower bound on the report date (date or ISO 8601 date-time, UTC).",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "To",
+      "in": "query",
+      "description": "Exclusive upper bound on the report date.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Search",
+      "in": "query",
+      "description": "Case-insensitive text match across substance, description, responsible party, location, waterbody, and report number.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Bbox",
+      "in": "query",
+      "description": "Spatial filter as minLon,minLat,maxLon,maxLat in WGS 84.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "MinGallons",
+      "in": "query",
+      "description": "Only incidents with an estimated quantity at or above this value.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+       "type": [
+        "number",
+        "string"
+       ],
+       "format": "double"
+      }
+     },
+     {
+      "name": "HasCoordinates",
+      "in": "query",
+      "description": "Restrict to incidents that do (true) or do not (false) carry map coordinates.",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "Page",
+      "in": "query",
+      "description": "1-based page number. Defaults to 1.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)$",
+       "type": [
+        "integer",
+        "string"
+       ],
+       "format": "int32"
+      }
+     },
+     {
+      "name": "PageSize",
+      "in": "query",
+      "description": "Records per page, between 1 and 200. Defaults to 25.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)$",
+       "type": [
+        "integer",
+        "string"
+       ],
+       "format": "int32"
+      }
+     },
+     {
+      "name": "Sort",
+      "in": "query",
+      "description": "Sort order; prefix with '-' for descending. Defaults to -reportedAt.",
+      "schema": {
+       "enum": [
+        "reportedAt",
+        "-reportedAt",
+        "quantity",
+        "-quantity"
+       ],
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/TrendPointDto"
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/problem+json": {
+        "schema": {
+         "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/stats/counties": {
+   "get": {
+    "tags": [
+     "Statistics"
+    ],
+    "summary": "Per-county rollup",
+    "description": "Incident count and volume for every county with at least one incident.",
+    "parameters": [
+     {
+      "name": "County",
+      "in": "query",
+      "description": "Washington county name, without the \"County\" suffix (e.g. Thurston).",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Region",
+      "in": "query",
+      "description": "Department of Ecology regional office.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "Northwest",
+        "Southwest",
+        "Central",
+        "Eastern"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Medium",
+      "in": "query",
+      "description": "Environmental medium primarily affected.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "MarineWater",
+        "FreshWater",
+        "Groundwater",
+        "Land",
+        "Air"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Category",
+      "in": "query",
+      "description": "Substance reporting category.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "CrudeOil",
+        "DieselFuel",
+        "Gasoline",
+        "JetFuel",
+        "HeavyFuelOil",
+        "LubeOrHydraulicOil",
+        "BilgeOrOilyWater",
+        "Chemical",
+        "Sewage",
+        "Other"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Source",
+      "in": "query",
+      "description": "Kind of source the spill originated from.",
+      "schema": {
+       "enum": [
+        "Unknown",
+        "Vessel",
+        "Facility",
+        "Pipeline",
+        "Vehicle",
+        "RailCar",
+        "Aircraft",
+        "Other"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "Status",
+      "in": "query",
+      "description": "Lifecycle state of the incident record.",
+      "schema": {
+       "enum": [
+        "Reported",
+        "UnderInvestigation",
+        "CleanupInProgress",
+        "Closed",
+        "ReferredToOtherAgency"
+       ],
+       "type": "string"
+      }
+     },
+     {
+      "name": "From",
+      "in": "query",
+      "description": "Inclusive lower bound on the report date (date or ISO 8601 date-time, UTC).",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "To",
+      "in": "query",
+      "description": "Exclusive upper bound on the report date.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Search",
+      "in": "query",
+      "description": "Case-insensitive text match across substance, description, responsible party, location, waterbody, and report number.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "Bbox",
+      "in": "query",
+      "description": "Spatial filter as minLon,minLat,maxLon,maxLat in WGS 84.",
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "name": "MinGallons",
+      "in": "query",
+      "description": "Only incidents with an estimated quantity at or above this value.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+       "type": [
+        "number",
+        "string"
+       ],
+       "format": "double"
+      }
+     },
+     {
+      "name": "HasCoordinates",
+      "in": "query",
+      "description": "Restrict to incidents that do (true) or do not (false) carry map coordinates.",
+      "schema": {
+       "type": "boolean"
+      }
+     },
+     {
+      "name": "Page",
+      "in": "query",
+      "description": "1-based page number. Defaults to 1.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)$",
+       "type": [
+        "integer",
+        "string"
+       ],
+       "format": "int32"
+      }
+     },
+     {
+      "name": "PageSize",
+      "in": "query",
+      "description": "Records per page, between 1 and 200. Defaults to 25.",
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)$",
+       "type": [
+        "integer",
+        "string"
+       ],
+       "format": "int32"
+      }
+     },
+     {
+      "name": "Sort",
+      "in": "query",
+      "description": "Sort order; prefix with '-' for descending. Defaults to -reportedAt.",
+      "schema": {
+       "enum": [
+        "reportedAt",
+        "-reportedAt",
+        "quantity",
+        "-quantity"
+       ],
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/CountyStatsDto"
+         }
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/problem+json": {
+        "schema": {
+         "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/imports": {
+   "get": {
+    "tags": [
+     "Imports"
+    ],
+    "summary": "List import runs, newest first",
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/ImportRunDto"
+         }
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "Imports"
+    ],
+    "summary": "Import an incident CSV file",
+    "description": "Runs the intake pipeline on an uploaded CSV: rows are validated, upserts are idempotent by report number, and rejected rows are quarantined. Returns the completed import run with its counts.",
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "type": "object",
+        "properties": {
+         "file": {
+          "$ref": "#/components/schemas/IFormFile"
+         }
+        }
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ImportRunDto"
+        }
+       }
+      }
+     },
+     "400": {
+      "description": "Bad Request",
+      "content": {
+       "application/problem+json": {
+        "schema": {
+         "$ref": "#/components/schemas/HttpValidationProblemDetails"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/imports/{id}/quarantine": {
+   "get": {
+    "tags": [
+     "Imports"
+    ],
+    "summary": "Quarantined rows for an import run",
+    "parameters": [
+     {
+      "name": "id",
+      "in": "path",
+      "description": "Import run identifier.",
+      "required": true,
+      "schema": {
+       "pattern": "^-?(?:0|[1-9]\\d*)$",
+       "type": "integer",
+       "format": "int32"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "OK",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/QuarantinedRecordDto"
+         }
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Not Found"
+     }
+    }
+   }
+  }
+ },
+ "components": {
+  "schemas": {
+   "AnnualBucketDto": {
+    "required": [
+     "key",
+     "count",
+     "gallons"
+    ],
+    "type": "object",
+    "properties": {
+     "key": {
+      "type": "string"
+     },
+     "count": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "gallons": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "number",
+       "string"
+      ],
+      "format": "double"
+     }
+    }
+   },
+   "AnnualReportDto": {
+    "required": [
+     "year",
+     "totalIncidents",
+     "totalGallons",
+     "recoveredGallons",
+     "recoveryRatePercent",
+     "byQuarter",
+     "topCountiesByCount",
+     "topSubstancesByVolume",
+     "largestIncidents",
+     "previousYearIncidents",
+     "yearOverYearChangePercent"
+    ],
+    "type": "object",
+    "properties": {
+     "year": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "totalIncidents": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "totalGallons": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "number",
+       "string"
+      ],
+      "format": "double"
+     },
+     "recoveredGallons": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "number",
+       "string"
+      ],
+      "format": "double"
+     },
+     "recoveryRatePercent": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "number",
+       "string"
+      ],
+      "format": "double"
+     },
+     "byQuarter": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/QuarterDto"
+      }
+     },
+     "topCountiesByCount": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AnnualBucketDto"
+      }
+     },
+     "topSubstancesByVolume": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/AnnualBucketDto"
+      }
+     },
+     "largestIncidents": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/IncidentSummaryDto"
+      }
+     },
+     "previousYearIncidents": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "yearOverYearChangePercent": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "null",
+       "number",
+       "string"
+      ],
+      "format": "double"
+     }
+    }
+   },
+   "BucketDto": {
+    "required": [
+     "key",
+     "count",
+     "gallons"
+    ],
+    "type": "object",
+    "properties": {
+     "key": {
+      "type": "string"
+     },
+     "count": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "gallons": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "number",
+       "string"
+      ],
+      "format": "double"
+     }
+    }
+   },
+   "CountyDto": {
+    "required": [
+     "name",
+     "fipsCode",
+     "region",
+     "isCoastal"
+    ],
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "fipsCode": {
+      "type": "string"
+     },
+     "region": {
+      "type": "string"
+     },
+     "isCoastal": {
+      "type": "boolean"
+     }
+    }
+   },
+   "CountyStatsDto": {
+    "required": [
+     "county",
+     "region",
+     "fipsCode",
+     "count",
+     "gallons"
+    ],
+    "type": "object",
+    "properties": {
+     "county": {
+      "type": "string"
+     },
+     "region": {
+      "type": "string"
+     },
+     "fipsCode": {
+      "type": "string"
+     },
+     "count": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "gallons": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "number",
+       "string"
+      ],
+      "format": "double"
+     }
+    }
+   },
+   "GeoJsonFeature": {
+    "required": [
+     "geometry",
+     "properties"
+    ],
+    "type": "object",
+    "properties": {
+     "geometry": {
+      "$ref": "#/components/schemas/GeoJsonPoint"
+     },
+     "properties": {
+      "$ref": "#/components/schemas/IncidentSummaryDto"
+     },
+     "type": {
+      "type": [
+       "null",
+       "string"
+      ]
+     }
+    }
+   },
+   "GeoJsonFeatureCollection": {
+    "required": [
+     "features"
+    ],
+    "type": "object",
+    "properties": {
+     "features": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/GeoJsonFeature"
+      }
+     },
+     "type": {
+      "type": [
+       "null",
+       "string"
+      ]
+     }
+    }
+   },
+   "GeoJsonPoint": {
+    "required": [
+     "coordinates"
+    ],
+    "type": "object",
+    "properties": {
+     "coordinates": {
+      "type": "array",
+      "items": {
+       "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+       "type": [
+        "number",
+        "string"
+       ],
+       "format": "double"
+      }
+     },
+     "type": {
+      "type": [
+       "null",
+       "string"
+      ]
+     }
+    }
+   },
+   "HttpValidationProblemDetails": {
+    "type": "object",
+    "properties": {
+     "type": {
+      "type": [
+       "null",
+       "string"
+      ]
+     },
+     "title": {
+      "type": [
+       "null",
+       "string"
+      ]
+     },
+     "status": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "null",
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "detail": {
+      "type": [
+       "null",
+       "string"
+      ]
+     },
+     "instance": {
+      "type": [
+       "null",
+       "string"
+      ]
+     },
+     "errors": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     }
+    }
+   },
+   "IFormFile": {
+    "type": "string",
+    "format": "binary"
+   },
+   "ImportRunDto": {
+    "required": [
+     "id",
+     "sourceName",
+     "startedAtUtc",
+     "completedAtUtc",
+     "status",
+     "totalRows",
+     "insertedCount",
+     "updatedCount",
+     "unchangedCount",
+     "rejectedCount",
+     "failureReason"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "sourceName": {
+      "type": "string"
+     },
+     "startedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "completedAtUtc": {
+      "type": [
+       "null",
+       "string"
+      ],
+      "format": "date-time"
+     },
+     "status": {
+      "type": "string"
+     },
+     "totalRows": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "insertedCount": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "updatedCount": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "unchangedCount": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "rejectedCount": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "failureReason": {
+      "type": [
+       "null",
+       "string"
+      ]
+     }
+    }
+   },
+   "IncidentDetailDto": {
+    "required": [
+     "id",
+     "reportNumber",
+     "reportedAtUtc",
+     "occurredAtUtc",
+     "description",
+     "latitude",
+     "longitude",
+     "locationDescription",
+     "waterbodyName",
+     "county",
+     "ecologyRegion",
+     "medium",
+     "substanceName",
+     "substanceCategory",
+     "quantityGallons",
+     "recoveredGallons",
+     "sourceType",
+     "responsibleParty",
+     "status",
+     "createdAtUtc",
+     "updatedAtUtc"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "reportNumber": {
+      "type": "string"
+     },
+     "reportedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "occurredAtUtc": {
+      "type": [
+       "null",
+       "string"
+      ],
+      "format": "date-time"
+     },
+     "description": {
+      "type": "string"
+     },
+     "latitude": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "null",
+       "number",
+       "string"
+      ],
+      "format": "double"
+     },
+     "longitude": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "null",
+       "number",
+       "string"
+      ],
+      "format": "double"
+     },
+     "locationDescription": {
+      "type": [
+       "null",
+       "string"
+      ]
+     },
+     "waterbodyName": {
+      "type": [
+       "null",
+       "string"
+      ]
+     },
+     "county": {
+      "type": [
+       "null",
+       "string"
+      ]
+     },
+     "ecologyRegion": {
+      "type": [
+       "null",
+       "string"
+      ]
+     },
+     "medium": {
+      "type": "string"
+     },
+     "substanceName": {
+      "type": "string"
+     },
+     "substanceCategory": {
+      "type": "string"
+     },
+     "quantityGallons": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+      "type": [
+       "null",
+       "number",
+       "string"
+      ],
+      "format": "double"
+     },
+     "recoveredGallons": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+      "type": [
+       "null",
+       "number",
+       "string"
+      ],
+      "format": "double"
+     },
+     "sourceType": {
+      "type": "string"
+     },
+     "responsibleParty": {
+      "type": [
+       "null",
+       "string"
+      ]
+     },
+     "status": {
+      "type": "string"
+     },
+     "createdAtUtc": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "updatedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+     }
+    }
+   },
+   "IncidentSummaryDto": {
+    "required": [
+     "id",
+     "reportNumber",
+     "reportedAtUtc",
+     "county",
+     "medium",
+     "substanceName",
+     "substanceCategory",
+     "quantityGallons",
+     "sourceType",
+     "status",
+     "latitude",
+     "longitude"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "reportNumber": {
+      "type": "string"
+     },
+     "reportedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "county": {
+      "type": [
+       "null",
+       "string"
+      ]
+     },
+     "medium": {
+      "type": "string"
+     },
+     "substanceName": {
+      "type": "string"
+     },
+     "substanceCategory": {
+      "type": "string"
+     },
+     "quantityGallons": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+      "type": [
+       "null",
+       "number",
+       "string"
+      ],
+      "format": "double"
+     },
+     "sourceType": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string"
+     },
+     "latitude": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "null",
+       "number",
+       "string"
+      ],
+      "format": "double"
+     },
+     "longitude": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "null",
+       "number",
+       "string"
+      ],
+      "format": "double"
+     }
+    }
+   },
+   "PagedResultOfIncidentSummaryDto": {
+    "required": [
+     "total",
+     "page",
+     "pageSize",
+     "items"
+    ],
+    "type": "object",
+    "properties": {
+     "total": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "page": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "pageSize": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/IncidentSummaryDto"
+      }
+     }
+    }
+   },
+   "QuarantinedRecordDto": {
+    "required": [
+     "id",
+     "rowNumber",
+     "reportNumber",
+     "rawRow",
+     "reasons"
+    ],
+    "type": "object",
+    "properties": {
+     "id": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "rowNumber": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "reportNumber": {
+      "type": [
+       "null",
+       "string"
+      ]
+     },
+     "rawRow": {
+      "type": "string"
+     },
+     "reasons": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+   },
+   "QuarterDto": {
+    "required": [
+     "quarter",
+     "count",
+     "gallons"
+    ],
+    "type": "object",
+    "properties": {
+     "quarter": {
+      "type": "string"
+     },
+     "count": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "gallons": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "number",
+       "string"
+      ],
+      "format": "double"
+     }
+    }
+   },
+   "StatsSummaryDto": {
+    "required": [
+     "totalIncidents",
+     "totalGallons",
+     "recoveredGallons",
+     "withCoordinates",
+     "byMedium",
+     "byCategory",
+     "bySource",
+     "byStatus"
+    ],
+    "type": "object",
+    "properties": {
+     "totalIncidents": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "totalGallons": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "number",
+       "string"
+      ],
+      "format": "double"
+     },
+     "recoveredGallons": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "number",
+       "string"
+      ],
+      "format": "double"
+     },
+     "withCoordinates": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "byMedium": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/BucketDto"
+      }
+     },
+     "byCategory": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/BucketDto"
+      }
+     },
+     "bySource": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/BucketDto"
+      }
+     },
+     "byStatus": {
+      "type": "array",
+      "items": {
+       "$ref": "#/components/schemas/BucketDto"
+      }
+     }
+    }
+   },
+   "TrendPointDto": {
+    "required": [
+     "month",
+     "count",
+     "gallons"
+    ],
+    "type": "object",
+    "properties": {
+     "month": {
+      "type": "string"
+     },
+     "count": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": [
+       "integer",
+       "string"
+      ],
+      "format": "int32"
+     },
+     "gallons": {
+      "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+      "type": [
+       "number",
+       "string"
+      ],
+      "format": "double"
+     }
+    }
+   }
+  }
+ },
+ "tags": [
+  {
+   "name": "Health"
+  },
+  {
+   "name": "Reference data"
+  },
+  {
+   "name": "Incidents"
+  },
+  {
+   "name": "Reports"
+  },
+  {
+   "name": "Statistics"
+  },
+  {
+   "name": "Imports"
+  }
+ ]
+}

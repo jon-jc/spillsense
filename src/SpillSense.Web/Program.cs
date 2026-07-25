@@ -12,6 +12,7 @@ builder.Services.AddSpillSenseInfrastructure(builder.Configuration);
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi(options =>
 {
+    options.AddOperationTransformer<QueryParameterDocumentationTransformer>();
     options.AddDocumentTransformer((document, _, _) =>
     {
         document.Info.Title = "SpillSense API";
@@ -75,7 +76,15 @@ app.MapExportEndpoints();
 app.MapReportEndpoints();
 
 app.MapOpenApi();
-app.MapScalarApiReference("/docs", options => options.WithTitle("SpillSense API"));
+
+// Two views of the same document, both available on either host:
+//  /docs      the branded reference page (static, in wwwroot)
+//  /explorer  Scalar's interactive explorer, which can execute live requests.
+// Scalar is pointed at the vendored bundle so it needs no CDN and works offline,
+// matching how the dashboard's other frontend libraries are shipped.
+app.MapScalarApiReference("/explorer", options => options
+    .WithTitle("SpillSense API Explorer")
+    .WithBundleUrl("/lib/scalar/standalone.js"));
 
 app.Run();
 return 0;
