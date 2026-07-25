@@ -110,7 +110,12 @@ Staff can also import from the dashboard: the **Import CSV** button in the Data 
 
 ### The API
 
-Interactive API reference lives at **`/docs`** (OpenAPI document at `/openapi/v1.json`).
+Two views of the same OpenAPI document, both available on either deployment:
+
+- **`/docs`** — a branded reference page with a filterable endpoint sidebar, parameter tables, and the accepted values for every enum-backed filter.
+- **`/explorer`** — Scalar's interactive explorer, which executes live requests and generates client snippets.
+
+The document itself is at `/openapi/v1.json` on the ASP.NET host and published as a static `openapi.json` for the serverless deployment. Scalar is vendored rather than loaded from a CDN, so both pages work offline.
 
 | Endpoint | Purpose |
 |---|---|
@@ -128,6 +133,8 @@ Interactive API reference lives at **`/docs`** (OpenAPI document at `/openapi/v1
 | `GET /api/imports/{id}/quarantine` | Quarantined rows with failure reasons |
 
 All filters combine with AND and are shared across list, GeoJSON, and stats endpoints. Bad input returns RFC 9457 problem details naming every invalid parameter — e.g. `?medium=Lava` lists the accepted values.
+
+Those filters bind as strings deliberately, so the parser can report *every* bad value at once instead of failing on the first with a framework binding error. An OpenAPI operation transformer attaches the accepted values and descriptions back onto the generated document, so the published contract stays complete.
 
 ## Deploying
 
