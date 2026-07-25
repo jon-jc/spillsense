@@ -8,7 +8,8 @@ import { initMap, renderIncidents, renderLegend, refreshMapTheme } from "./map.j
 import { renderTrend, renderCategories, renderMedium } from "./charts.js";
 import { initTable, refreshTable, resetTablePage } from "./table.js";
 import { initDrawer, openDrawer } from "./drawer.js";
-import { loadImports } from "./imports.js";
+import { loadImports, initImportUpload } from "./imports.js";
+import { toast } from "./toast.js";
 
 applyStoredTheme();
 
@@ -38,6 +39,8 @@ async function boot() {
 
   populateCounties();
   hideUnavailableNav();
+  // A fresh import changes the underlying data, so re-run every panel.
+  initImportUpload(() => refreshAll(currentFilters()));
   onFiltersChanged(handleFilterChange);
   await refreshAll(currentFilters());
   loadImports();
@@ -163,15 +166,6 @@ async function refreshAnalytics(filters) {
   renderCategories(summary.byCategory, summary.totalIncidents);
   renderMedium(summary.byMedium);
   renderLegend(summary.byCategory);
-}
-
-let toastTimer;
-function toast(message) {
-  const el = document.getElementById("toast");
-  el.textContent = message;
-  el.hidden = false;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.hidden = true; }, 4200);
 }
 
 function escapeHtml(s) {

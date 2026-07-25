@@ -18,8 +18,8 @@ import countiesHandler from "../../api/counties.js";
 import importsHandler from "../../api/imports/index.js";
 import quarantineHandler from "../../api/imports/[id]/quarantine.js";
 
-function invoke(handler, url, query = {}) {
-  const req = { url, query };
+function invoke(handler, url, query = {}, method = "GET") {
+  const req = { url, query, method };
   const res = {
     statusCode: 200,
     headers: {},
@@ -144,4 +144,10 @@ test("reference and audit endpoints serve the snapshot", () => {
   assert.ok(quarantine.json[0].reasons.length > 0);
 
   assert.equal(invoke(quarantineHandler, "/api/imports/9999/quarantine", { id: "9999" }).status, 404);
+});
+
+test("this replica refuses CSV intake instead of pretending to accept it", () => {
+  const { status, json } = invoke(importsHandler, "/api/imports", {}, "POST");
+  assert.equal(status, 405);
+  assert.match(json.title, /read-only replica/);
 });

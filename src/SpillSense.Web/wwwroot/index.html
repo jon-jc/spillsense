@@ -139,7 +139,6 @@
           <span id="map-count" class="card-meta"></span>
         </div>
         <div id="map" role="application" aria-label="Map of spill incidents"></div>
-        <div class="map-legend" id="map-legend" aria-hidden="true"></div>
       </div>
       <div class="charts-col">
         <div class="card chart-card">
@@ -198,7 +197,13 @@
     <section id="intake" class="card intake-card" aria-label="Data intake audit">
       <div class="card-head">
         <h2>Data intake</h2>
-        <span class="card-meta">import runs &amp; quarantine audit</span>
+        <div class="card-head-actions">
+          <span class="card-meta">import runs &amp; quarantine audit</span>
+          <label class="btn btn-file" data-live-only>
+            Import CSV
+            <input id="import-file" type="file" accept=".csv,text/csv" hidden>
+          </label>
+        </div>
       </div>
       <div class="table-scroll">
         <table>

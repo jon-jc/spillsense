@@ -43,7 +43,7 @@ A dependency-light single-page GIS dashboard (vanilla ES modules, Leaflet, Chart
 - **Every filter drives every panel** — search, county, Ecology region, medium, substance, source, status, and date range combine with AND across the map, charts, KPIs, and table; active filters render as removable chips.
 - **Shareable state** — filters live in the querystring, so any view is a permalink.
 - **Incident explorer** — sortable, paged records table with inline volume bars and status pills; row click opens a detail drawer and flies the map to the incident.
-- **Intake audit** — import runs with outcome chips; quarantined rows are reviewable with the raw CSV line and every validation failure.
+- **Intake audit & upload** — import a CSV directly from the browser and watch the whole dashboard refresh against it; import runs carry outcome chips, and quarantined rows are reviewable with the raw CSV line and every validation failure.
 - **Cared-for details** — full light/dark theming, keyboard access and focus management, `prefers-reduced-motion` support, skeleton loading states, and graceful error toasts.
 
 ### Data model
@@ -104,6 +104,8 @@ dotnet run --project src/SpillSense.Web -- import "$(pwd)/data/sample/quarantine
 
 Validation catches malformed report numbers, unparseable or future dates, swapped/out-of-state coordinates, unknown counties, negative quantities, unrecognized classifications, and in-file duplicates — and reports *every* problem on a row at once. Free-text substance names are auto-classified into reporting categories (diesel, crude, heavy fuel oil, chemical, …).
 
+Staff can also import from the dashboard: the **Import CSV** button in the Data intake panel posts to `POST /api/imports`, runs the same pipeline, and reports the run's counts inline — the map, charts, and tables refresh against the new data immediately, and any quarantined rows are reviewable in place.
+
 > Sample data is synthetic (see `tools/generate-sample-data.mjs`) — realistic in shape and geography, but not real ERTS records.
 
 ### The API
@@ -122,6 +124,7 @@ Interactive API reference lives at **`/docs`** (OpenAPI document at `/openapi/v1
 | `GET /api/counties` | Reference data: all 39 counties with FIPS + Ecology regions |
 | `GET /api/reports/annual/{year}` | Composed annual report: totals, quarters, top counties/substances, largest incidents, year-over-year |
 | `GET /api/imports` | Import-run audit trail |
+| `POST /api/imports` | Upload an incident CSV; runs the intake pipeline and returns the completed run |
 | `GET /api/imports/{id}/quarantine` | Quarantined rows with failure reasons |
 
 All filters combine with AND and are shared across list, GeoJSON, and stats endpoints. Bad input returns RFC 9457 problem details naming every invalid parameter — e.g. `?medium=Lava` lists the accepted values.

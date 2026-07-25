@@ -20,6 +20,7 @@ const TILES = {
 let map;
 let tileLayer;
 let cluster;
+let legendControl;
 let onSelect = () => {};
 
 export function initMap(selectHandler) {
@@ -86,11 +87,28 @@ function popupHtml(p) {
     <span class="popup-link" role="button" tabindex="0">View ${p.reportNumber}</span>`;
 }
 
+/**
+ * The legend is a real Leaflet control (not an overlaid div): controls live in
+ * the map's own control layer, so the legend stays above tile/marker panes,
+ * anchors to the map corner at any size, and repositions with the map chrome.
+ */
 export function renderLegend(buckets) {
-  const legend = document.getElementById("map-legend");
+  if (!legendControl) {
+    legendControl = L.control({ position: "bottomleft" });
+    legendControl.onAdd = () => {
+      const div = L.DomUtil.create("div", "map-legend");
+      div.setAttribute("aria-hidden", "true");
+      // Keep map drag/scroll gestures from firing through the legend.
+      L.DomEvent.disableClickPropagation(div);
+      L.DomEvent.disableScrollPropagation(div);
+      return div;
+    };
+    legendControl.addTo(map);
+  }
+
   const present = new Set(buckets.filter((b) => b.count > 0).map((b) => b.key));
   const rows = CATEGORY_ORDER.filter((c) => present.has(c)).slice(0, 8);
-  legend.innerHTML = rows
+  legendControl.getContainer().innerHTML = rows
     .map((c) => `<div class="legend-row"><span class="legend-dot" style="background:${categoryColor(c)}"></span>${labelize(c)}</div>`)
     .join("");
 }

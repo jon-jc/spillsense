@@ -1,7 +1,49 @@
-// Data-intake audit panel: import runs and their quarantined rows.
+// Data-intake audit panel: import runs, their quarantined rows, and the
+// CSV upload flow (ASP.NET host only — the serverless replica is read-only).
 
 import { api } from "./api.js";
 import { fmtDateTime, fmtInt, labelize } from "./format.js";
+import { toast } from "./toast.js";
+
+/** Wires the Import CSV button. `onImported` refreshes the rest of the app. */
+export function initImportUpload(onImported) {
+  const input = document.getElementById("import-file");
+  const button = input.closest(".btn-file");
+
+  input.addEventListener("change", async () => {
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+
+    button.classList.add("busy");
+    toast(`Importing ${file.name}…`, 60000);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const response = await fetch("api/imports", { method: "POST", body });
+      const result = await response.json();
+
+      if (!response.ok) {
+        const detail = result?.errors?.file?.[0] ?? result?.detail ?? `${response.status}`;
+        toast(`Import failed: ${detail}`);
+        return;
+      }
+
+      toast(result.status === "Failed"
+        ? `Import failed: ${result.failureReason}`
+        : `${file.name}: ${fmtInt(result.insertedCount)} inserted, ` +
+          `${fmtInt(result.updatedCount)} updated, ${fmtInt(result.unchangedCount)} unchanged, ` +
+          `${fmtInt(result.rejectedCount)} quarantined.`, 7000);
+
+      await loadImports();
+      await onImported();
+    } catch (err) {
+      toast(`Import failed: ${err.message}`);
+    } finally {
+      button.classList.remove("busy");
+    }
+  });
+}
 
 export async function loadImports() {
   const tbody = document.getElementById("import-rows");

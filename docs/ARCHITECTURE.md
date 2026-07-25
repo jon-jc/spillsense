@@ -8,7 +8,7 @@ choices were made.
 ```mermaid
 flowchart LR
     subgraph intake [Data intake]
-        CSV[Incident CSV files] --> IMP[IncidentImportService\nvalidate, classify, upsert]
+        CSV[Incident CSV files\nCLI or dashboard upload] --> IMP[IncidentImportService\nvalidate, classify, upsert]
         IMP -->|rejects, verbatim| Q[(QuarantinedRecords)]
         IMP -->|audit| RUNS[(ImportRuns)]
         IMP -->|idempotent upserts| DB[(SpillIncidents + Counties)]
@@ -110,6 +110,14 @@ The Vercel functions re-implement only the thin query/aggregation layer over
 data exported from the system of record — never intake or validation. A
 node:test contract suite runs in CI beside the .NET integration suite, so the
 two hosts cannot silently drift on the shared contract.
+
+**One intake path, two entry points.**
+The CLI (`dotnet run -- import file.csv`) and the dashboard upload
+(`POST /api/imports`) both call the same `IncidentImportService`, so validation,
+quarantine, and idempotency behave identically no matter who starts the run.
+The read-only replica answers `POST /api/imports` with `405` and an explanation
+rather than silently accepting data it cannot persist — a wrong success is worse
+than an honest refusal.
 
 **No frontend build step.**
 The dashboard is vanilla ES modules with vendored, version-pinned libraries.
