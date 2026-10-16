@@ -10,6 +10,8 @@ are reproducible without a Node toolchain.
 | Chart.js | 4.4.9 | https://unpkg.com/chart.js@4.4.9/dist/chart.umd.js |
 | Scalar API Reference | 3.0.0 | https://cdn.jsdelivr.net/npm/@scalar/api-reference/dist/browser/standalone.js |
 
-Base-map tiles are fetched from openstreetmap.org at runtime (attribution shown
-on the map). The dashboard renders incident markers with vector `circleMarker`s,
-so Leaflet's raster marker images are not needed.
+Base-map tiles are fetched at runtime: Esri's light and dark gray canvases by
+default, or CARTO's Positron and Dark Matter when a CARTO basemap key is set in
+`../js/config.js` (CARTO has required one since September 2026). Attribution is
+shown on the map. The dashboard renders incident markers with vector
+`circleMarker`s, so Leaflet's raster marker images are not needed.

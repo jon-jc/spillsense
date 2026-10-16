@@ -46,6 +46,12 @@ A dependency-light single-page GIS dashboard (vanilla ES modules, Leaflet, Chart
 - **Intake audit & upload** — import a CSV directly from the browser and watch the whole dashboard refresh against it; import runs carry outcome chips, and quarantined rows are reviewable with the raw CSV line and every validation failure.
 - **Cared-for details** — full light/dark theming, keyboard access and focus management, `prefers-reduced-motion` support, skeleton loading states, and graceful error toasts.
 
+### Basemap
+
+The map draws over a neutral canvas basemap so the incident layer stays in the foreground. Out of the box it uses Esri's key-free light and dark gray canvases, so a fresh clone works with no setup.
+
+CARTO's Positron and Dark Matter tiles, which the dashboard was designed on, have required an API key since 25 September 2026 — anonymous requests come back watermarked *API KEY REQUIRED*. To use them instead, request a free key at [carto.com/basemaps/apikey](https://carto.com/basemaps/apikey/) (no account needed; 5 M tile requests a month for non-commercial use), set `cartoBasemapKey` in [`src/SpillSense.Web/wwwroot/js/config.js`](src/SpillSense.Web/wwwroot/js/config.js), and redeploy. The key travels on every tile URL, so it is public by design; restrict it to your hostnames in CARTO's basemap dashboard. If CARTO refuses the key for the host serving the page, the map falls back to the Esri canvas rather than going blank.
+
 ### Data model
 
 ```mermaid
